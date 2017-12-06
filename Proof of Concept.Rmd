@@ -12,6 +12,9 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r set_environment}
 library(dplyr)
 library(ggplot2)
+library(igraph)
+library(visNetwork)
+library(plotrix)
 ```
 
 ## Description
@@ -30,6 +33,79 @@ The goal of this section is to convert the data of top songs by country into net
 
 Additionally, we will want a data frame containing lists of songs shared between countries.  This will allow us to sample songs that are shared between a given set of countries.
 
+We begin by loading and inspecting the data to determine which columns we need.
+
+```{r import_geo_tracks}
+load('raw_data/geo_tracks.rData')
+```
+
+```{r inspect_geo_tracks}
+head(geo_tracks)
+```
+
+We'll want the track_uri to get our distinct counts of shared tracks, and the country column for grouping.  We'll also include continent and region to give us an extra dimension to visualize the data with, if desired.  This should give us sufficient information to create our network map with.  We'll also want the track name, artist name, album name, album image, and track preview url so we can have a surface details about a song when called.
+
+```{r cut_columns_geo_tracks}
+geo_tracks <- geo_tracks %>%
+  select(country, region, continent, track_uri, track_name, artist_name, album_name, album_img, track_preview_url)
+```
+
+We need to inspect the data before processing to make sure we're not surprised in the end by missing data.
+
+```{r inspect_missing_data}
+colSums(is.na(geo_tracks))
+```
+
+Fortunately, most of our data is filled.  There is a substantial chunk of missing preview urls, which means that there will be cases when we might not be able to sample shared tracks between countries if all the shared tracks lack a preview.
+
+Because the rest of our data is issue-free, we can build our network data.  We start with building a table that has every track mapped to country pairs.  This will allow us to sample songs based on which pair of countries we're interested in.  We join the table with a copy of itself on the track uri and remove instances where it matched the exact row to itself.  
+
+```{r create_track_colocation}
+geo_track_temp <- geo_tracks
+
+track_colocation <- geo_tracks %>%
+  inner_join(geo_track_temp, by = c("track_uri" = "track_uri")) %>%
+  filter(country.x != country.y) %>%
+  select(track_uri, country.x, country.y)
+```
+
+To build our edge graph, we summarise the number of distinct track uri's by the country groups.  We then remove all the rows that are duplicates of another row but for the country names existing in opposite columns.
+
+```{r create_network_data}
+music_network <- track_colocation %>%
+  group_by(country.x, country.y) %>%
+  summarise(Weight = n_distinct(track_uri))
+
+music_network <- music_network[!duplicated(t(apply(music_network, 1, sort))),]
+colnames(music_network) <- c("Source", "Target", "weight")
+```
+
+We build a node graph that contains each country, with its region and continent.
+
+```{r create_node_graph}
+country_nodes <- unique(geo_tracks[,1:3])
+```
+
 ## Data Exploration
 
 The goal of this section is to test the different ways of vizualizing the networks to ensure that the output is informative and easy to read.  We also experiment with functions to sample songs between two input countries.
+
+Ideally, we can use igraph to create a visually appealing network graph, and then pass it through visNetwork to allow for interactivity.  We allow DataViz to map in the default, which appears to be a Fruchterman-Reingold layout structure.
+
+```{r create_igraph}
+g <- graph_from_data_frame(d=music_network, vertices=country_nodes, directed=F)
+
+## Edges
+E(g)$width <- E(g)$weight/10
+
+## Vertices
+# Color nodes by continent
+color1 <- c("red", "blue", "green", "purple", "orange")
+V(g)$color <- color1[factor(V(g)$continent)]
+color1 <- c("red", "blue", "green", "purple", "orange", 'pink', 'brown', 'black', 'lightblue', 'lightgreen', 'grey', 'pink', 'yellow', 'lightgrey')
+V(g)$color <- color1[factor(V(g)$region)]
+
+## Plot
+plot(g, vertex.label=NA, layout=layout.fruchterman.reingold(g))
+visIgraph(g, idToLabel = TRUE)  
+```
