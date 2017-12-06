@@ -6,7 +6,8 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE,
+                      tidy = TRUE)
 ```
 
 ```{r set_environment}
@@ -86,6 +87,12 @@ We build a node graph that contains each country, with its region and continent.
 country_nodes <- unique(geo_tracks[,1:3])
 ```
 
+We also want a unique database of the tracks in our colocation table, so we can access their information.
+
+```{r track_data}
+track_data <- unique(geo_tracks[complete.cases(geo_tracks) & geo_tracks$track_uri %in% track_colocation$track_uri,4:9])
+```
+
 ## Data Exploration
 
 The goal of this section is to test the different ways of vizualizing the networks to ensure that the output is informative and easy to read.  We also experiment with functions to sample songs between two input countries.
@@ -107,5 +114,16 @@ V(g)$color <- color1[factor(V(g)$region)]
 
 ## Plot
 plot(g, vertex.label=NA, layout=layout.fruchterman.reingold(g))
-visIgraph(g, idToLabel = TRUE)  
+visIgraph(g, idToLabel = TRUE) %>% 
+  visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE)
+```
+
+## Save Data
+
+We save the data we need to run the shiny app:
+
+```{r save_data}
+saveRDS(g, "data/network.rds")
+saveRDS(track_colocation, "data/track_colocation.rds")
+saveRDS(track_data, "data/track_data.rds")
 ```
