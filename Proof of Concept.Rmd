@@ -1,0 +1,35 @@
+---
+title: "Proof of Concept"
+author: "Brendan Molin"
+date: "December 6, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r set_environment}
+library(dplyr)
+library(ggplot2)
+```
+
+## Description
+
+This document provides a walkthrough of the analyis and decision-making steps taken in the development of the Spotify app.  The desired app will show a network map of countries based on their shared songs, and allow the user to sample the shared songs.  The visualization attempts to outline unique musical communities.
+
+## Data Source
+
+The data used was provided by [lecturer name], who introduced the dataset and provided an exploratory analysis at the Data Viz meetup on December 5th, 2017.
+
+The data of concern is the list of the Top 200 songs being listened to in each country, after removing the most common songs listend to worldwide.  The data was initially pulled by the lecturer via the Spotify API and shared via Google Drive: <https://drive.google.com/drive/folders/1fwSi6und-eY-yfVKRDpg0H6mwn33zrQo>
+
+## Data PreProcessing
+
+The goal of this section is to convert the data of top songs by country into network graph of connections between countries, with connections defined as the number of shared songs between countries.  Using this data, we should be able to easily draw a network graph to depict musical communities.
+
+Additionally, we will want a data frame containing lists of songs shared between countries.  This will allow us to sample songs that are shared between a given set of countries.
+
+## Data Exploration
+
+The goal of this section is to test the different ways of vizualizing the networks to ensure that the output is informative and easy to read.  We also experiment with functions to sample songs between two input countries.
