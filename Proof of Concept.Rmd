@@ -67,7 +67,8 @@ geo_track_temp <- geo_tracks
 track_colocation <- geo_tracks %>%
   inner_join(geo_track_temp, by = c("track_uri" = "track_uri")) %>%
   filter(country.x != country.y) %>%
-  select(track_uri, country.x, country.y)
+  select(track_uri, country.x, country.y) %>%
+  unique()
 ```
 
 To build our edge graph, we summarise the number of distinct track uri's by the country groups.  We then remove all the rows that are duplicates of another row but for the country names existing in opposite columns.
