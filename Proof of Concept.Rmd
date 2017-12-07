@@ -104,6 +104,7 @@ g <- graph_from_data_frame(d=music_network, vertices=country_nodes, directed=F)
 
 ## Edges
 E(g)$width <- E(g)$weight/10
+E(g)$id <- 1:ecount(g)
 
 ## Vertices
 # Color nodes by continent
