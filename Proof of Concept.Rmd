@@ -24,9 +24,9 @@ This document provides a walkthrough of the analyis and decision-making steps ta
 
 ## Data Source
 
-The data used was provided by [lecturer name], who introduced the dataset and provided an exploratory analysis at the Data Viz meetup on December 5th, 2017.
+The data used was provided by Charlie Thompson <http://www.rcharlie.com/>, who introduced the dataset and provided an exploratory analysis at the Data Viz meetup on December 5th, 2017.
 
-The data of concern is the list of the Top 200 songs being listened to in each country, after removing the most common songs listend to worldwide.  The data was initially pulled by the lecturer via the Spotify API and shared via Google Drive: <https://drive.google.com/drive/folders/1fwSi6und-eY-yfVKRDpg0H6mwn33zrQo>
+The data of concern is the list of the top songs being listened to in each country, after removing the most common songs listend to worldwide.  The data was initially pulled by the lecturer via the Spotify API and shared via Google Drive: <https://drive.google.com/drive/folders/1fwSi6und-eY-yfVKRDpg0H6mwn33zrQo>
 
 ## Data PreProcessing
 
@@ -129,3 +129,8 @@ saveRDS(g, "data/network.rds")
 saveRDS(track_colocation, "data/track_colocation.rds")
 saveRDS(track_data, "data/track_data.rds")
 ```
+
+## Citations and Credits
+
+Thompson, Charlie
+<http://www.rcharlie.com/>
