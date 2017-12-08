@@ -1,4 +1,5 @@
 library(visNetwork)
+library(igraph)
 
 # Takes an edge id and returns a sample song link from a track shared by the two countries at end of the edge
 sample_track <- function(edge_id) {

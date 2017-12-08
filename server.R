@@ -4,7 +4,6 @@ server <- function(input, output, session) {
 #      visOptions(highlightNearest = TRUE) %>%
       visEvents(selectEdge = 
 "function(properties) {Shiny.onInputChange('current_edge_id', properties.edges);}")
-    
   })
   
   output$shiny_return <- renderTable({
