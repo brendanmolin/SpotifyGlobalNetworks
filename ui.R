@@ -1,4 +1,9 @@
 ui <- fluidPage(
-  visNetworkOutput("network"), 
-  tableOutput("shiny_return")  
+  mainPanel(
+    visNetworkOutput("network"),
+    tableOutput("shiny_return")
+  )#, 
+#  sidebarPanel(
+#     htmlOutput("inc")
+#  )
 )
