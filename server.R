@@ -1,7 +1,5 @@
 server <- function(input, output, session) {
-  track <- reactive({
-    sample_track(input$current_edge_id)
-  })
+  track <- reactive(sample_track(input$current_edge_id))
   
   output$network <- renderVisNetwork({
     visIgraph(g, idToLabel = TRUE) %>% 
@@ -11,7 +9,6 @@ server <- function(input, output, session) {
   
   output$shiny_return <- renderTable({
     if(!is.null(input$current_edge_id)) {
-      print(input$current_edge_id)
       track()[,1:3]
     } else {
       "Choose an edge to sample a song!"
