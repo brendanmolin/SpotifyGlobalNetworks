@@ -1,25 +1,25 @@
 server <- function(input, output, session) {
+  track <- reactive({
+    sample_track(input$current_edge_id)
+  })
+  
   output$network <- renderVisNetwork({
     visIgraph(g, idToLabel = TRUE) %>% 
-#      visOptions(highlightNearest = TRUE) %>%
       visEvents(selectEdge = 
 "function(properties) {Shiny.onInputChange('current_edge_id', properties.edges);}")
   })
   
   output$shiny_return <- renderTable({
     if(!is.null(input$current_edge_id)) {
-      sample_track(input$current_edge_id)[,1:3]
+      print(input$current_edge_id)
+      track()[,1:3]
     } else {
       "Choose an edge to sample a song!"
     }
   })
   
   output$music <- renderUI({
-    
-    track <- sample_track(input$current_edge_id)
-    
-    
-    tags$audio(src = track[,4], type = "audio/mp3", autoplay = NA, controls = NA)
+    tags$audio(src = track()[,4], type = "audio/mp3", autoplay = NA, controls = NA)
   })
   
 }
