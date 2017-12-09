@@ -1,5 +1,7 @@
 source("src/app/date_engine.R")
+library(visNetwork)
+library(igraph)
 
 g <- readRDS("data/network.rds")
-track_colocation <- readRDS( "data/track_colocation.rds")
-track_data <- readRDS("data/track_data.rds")
+track_country_colocation <- readRDS( "data/track_country_colocation.rds")
+track_country_data <- readRDS("data/track_country_data.rds")

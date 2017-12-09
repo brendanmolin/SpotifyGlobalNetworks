@@ -1,5 +1,5 @@
 server <- function(input, output, session) {
-  track <- reactive(sample_track(input$current_edge_id))
+  track <- reactive(sample_track(input$current_edge_id, g, track_country_colocation, track_country_data))
   
   output$network <- renderVisNetwork({
     visIgraph(g, idToLabel = TRUE) %>% 

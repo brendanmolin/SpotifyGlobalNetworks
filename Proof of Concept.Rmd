@@ -44,11 +44,11 @@ load('raw_data/geo_tracks.rData')
 head(geo_tracks)
 ```
 
-We'll want the track_uri to get our distinct counts of shared tracks, and the country column for grouping.  We'll also include continent and region to give us an extra dimension to visualize the data with, if desired.  This should give us sufficient information to create our network map with.  We'll also want the track name, artist name, album name, album image, and track preview url so we can have a surface details about a song when called.
+We'll want the track_uri to get our distinct counts of shared tracks, and the country and city columns for grouping.  We'll also include continent and region to give us an extra dimension to visualize the data with, if desired.  This should give us sufficient information to create our network map with.  We'll also want the track name, artist name, album name, album image, and track preview url so we can have a surface details about a song when called.
 
 ```{r cut_columns_geo_tracks}
 geo_tracks <- geo_tracks %>%
-  select(country, region, continent, track_uri, track_name, artist_name, album_name, album_img, track_preview_url)
+  select(city_country, country, region, continent, track_uri, track_name, artist_name, album_name, album_img, track_preview_url)
 ```
 
 We need to inspect the data before processing to make sure we're not surprised in the end by missing data.
@@ -59,49 +59,67 @@ colSums(is.na(geo_tracks))
 
 Fortunately, most of our data is filled.  There is a substantial chunk of missing preview urls, which means that there will be cases when we might not be able to sample shared tracks between countries if all the shared tracks lack a preview.
 
-Because the rest of our data is issue-free, we can build our network data.  We start with building a table that has every track mapped to country pairs.  This will allow us to sample songs based on which pair of countries we're interested in.  We join the table with a copy of itself on the track uri and remove instances where it matched the exact row to itself.  
+Because the rest of our data is issue-free, we can build our network data.  We start with building a table that has every track mapped to country pairs, and another table with city pairs.  This will allow us to sample songs based on which pair of countries or cities we're interested in.  We join the tables with a copy of themselves on the track uri and remove instances where it matched the exact row to itself.  
 
 ```{r create_track_colocation}
 geo_track_temp <- geo_tracks
 
-track_colocation <- geo_tracks %>%
+track_country_colocation <- geo_tracks %>%
   inner_join(geo_track_temp, by = c("track_uri" = "track_uri")) %>%
   filter(country.x != country.y) %>%
   select(track_uri, country.x, country.y) %>%
   unique()
+
+track_city_colocation <- geo_tracks %>%
+  inner_join(geo_track_temp, by = c("track_uri" = "track_uri")) %>%
+  filter(city_country.x != city_country.y) %>%
+  select(track_uri, city_country.x, city_country.y) %>%
+  unique()
 ```
 
-To build our edge graph, we summarise the number of distinct track uri's by the country groups.  We then remove all the rows that are duplicates of another row but for the country names existing in opposite columns.
+To build our edge graphs, we summarise the number of distinct track uri's by the country and city groups.  We then remove all the rows that are duplicates of another row but for the country/city names existing in opposite columns.
 
 ```{r create_network_data}
-music_network <- track_colocation %>%
+country_network <- track_country_colocation %>%
   group_by(country.x, country.y) %>%
   summarise(Weight = n_distinct(track_uri))
 
-music_network <- music_network[!duplicated(t(apply(music_network, 1, sort))),]
-colnames(music_network) <- c("Source", "Target", "weight")
+country_network <- country_network[!duplicated(t(apply(country_network, 1, sort))),]
+colnames(country_network) <- c("Source", "Target", "weight")
+
+city_network <- track_city_colocation %>%
+  group_by(city_country.x, city_country.y) %>%
+  summarise(Weight = n_distinct(track_uri))
+
+city_network <- city_network[!duplicated(t(apply(city_network, 1, sort))),]
+colnames(city_network) <- c("Source", "Target", "weight")
 ```
 
-We build a node graph that contains each country, with its region and continent.
+We build a node graph that contains each country, with its region and continent, and a node graph that contains each city, with its country, region, and continent
 
 ```{r create_node_graph}
-country_nodes <- unique(geo_tracks[,1:3])
+country_nodes <- unique(geo_tracks[,2:4])
+city_nodes <- unique(geo_tracks[,1:4])
 ```
 
-We also want a unique database of the tracks in our colocation table, so we can access their information.
+We also want a unique database of the tracks in our colocation tables, so we can access their information.
 
 ```{r track_data}
-track_data <- unique(geo_tracks[complete.cases(geo_tracks) & geo_tracks$track_uri %in% track_colocation$track_uri,4:9])
+track_country_data <- unique(geo_tracks[complete.cases(geo_tracks) & geo_tracks$track_uri %in% track_country_colocation$track_uri,5:10])
+track_city_data <- unique(geo_tracks[complete.cases(geo_tracks) & geo_tracks$track_uri %in% track_city_colocation$track_uri,5:10])
 ```
 
 ## Data Exploration
 
-The goal of this section is to test the different ways of vizualizing the networks to ensure that the output is informative and easy to read.  We also experiment with functions to sample songs between two input countries.
+The goal of this section is to test the different ways of vizualizing the networks to ensure that the output is informative and easy to read.
 
 Ideally, we can use igraph to create a visually appealing network graph, and then pass it through visNetwork to allow for interactivity.  We allow DataViz to map in the default, which appears to be a Fruchterman-Reingold layout structure.
 
-```{r create_igraph}
-g <- graph_from_data_frame(d=music_network, vertices=country_nodes, directed=F)
+### Country
+
+The country network graph is really aesthetically pleasing, with some logical clustering around same-language countries, with the Europeans forming sparser and odd relationships.
+```{r create_country_igraph}
+g <- graph_from_data_frame(d=country_network, vertices=country_nodes, directed=F)
 
 ## Edges
 E(g)$width <- E(g)$weight/10
@@ -120,14 +138,41 @@ visIgraph(g, idToLabel = TRUE) %>%
   visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE)
 ```
 
+### City
+
+This graph is a lot harder to parse.  The visNetwork actually causes my computer to crash - not great.  I think it might be intersting to play around with though, if it can work well in the shiny app.  VisNetwork's default layout is pretty good, as the typically reliable Fruchterman-Reingold layout is really distorted by the unconnected node.
+
+```{r create_country_igraph}
+h <- graph_from_data_frame(d=city_network, vertices=city_nodes, directed=F)
+
+## Edges
+E(h)$width <- E(h)$weight/10
+E(h)$id <- 1:ecount(h)
+
+## Vertices
+# Color nodes by continent
+color1 <- c("red", "blue", "green", "purple", "orange")
+V(h)$color <- color1[factor(V(h)$continent)]
+color1 <- c("red", "blue", "green", "purple", "orange", 'pink', 'brown', 'black', 'lightblue', 'lightgreen', 'grey', 'pink', 'yellow', 'lightgrey')
+V(h)$color <- color1[factor(V(h)$region)]
+
+## Plot
+plot(h, vertex.label=NA, layout=layout.fruchterman.reingold(h))
+visIgraph(h, idToLabel = TRUE) %>% 
+  visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE)
+```
+
 ## Save Data
 
 We save the data we need to run the shiny app:
 
 ```{r save_data}
-saveRDS(g, "data/network.rds")
-saveRDS(track_colocation, "data/track_colocation.rds")
-saveRDS(track_data, "data/track_data.rds")
+saveRDS(g, "data/country_network.rds")
+saveRDS(h, "data/city_network.rds")
+saveRDS(track_country_colocation, "data/track_country_colocation.rds")
+saveRDS(track_country_data, "data/track_country_data.rds")
+saveRDS(track_city_colocation, "data/track_city_colocation.rds")
+saveRDS(track_city_data, "data/track_city_data.rds")
 ```
 
 ## Citations and Credits
