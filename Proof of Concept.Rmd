@@ -140,9 +140,9 @@ visIgraph(g, idToLabel = TRUE) %>%
 
 ### City
 
-This graph is a lot harder to parse.  The visNetwork actually causes my computer to crash - not great.  I think it might be intersting to play around with though, if it can work well in the shiny app.  VisNetwork's default layout is pretty good, as the typically reliable Fruchterman-Reingold layout is really distorted by the unconnected node.
+This graph is a lot harder to parse.  The visNetwork actually causes my computer to crash - not great.  I think it might be intersting to play around with though, but it simply takes too long to render to be any fun.
 
-```{r create_country_igraph}
+```{r create_city_igraph}
 h <- graph_from_data_frame(d=city_network, vertices=city_nodes, directed=F)
 
 ## Edges
