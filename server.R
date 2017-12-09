@@ -8,9 +8,18 @@ server <- function(input, output, session) {
   
   output$shiny_return <- renderTable({
     if(!is.null(input$current_edge_id)) {
-      sample_track(input$current_edge_id)
+      sample_track(input$current_edge_id)[,1:3]
     } else {
       "Choose an edge to sample a song!"
     }
   })
+  
+  output$music <- renderUI({
+    
+    track <- sample_track(input$current_edge_id)
+    
+    
+    tags$audio(src = track[,4], type = "audio/mp3", autoplay = NA, controls = NA)
+  })
+  
 }

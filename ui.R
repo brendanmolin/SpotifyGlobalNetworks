@@ -1,6 +1,7 @@
 ui <- fluidPage(
   mainPanel(
     visNetworkOutput("network"),
-    tableOutput("shiny_return")
+    tableOutput("shiny_return"),
+    uiOutput('music')
   )
 )
